@@ -1,0 +1,215 @@
+---
+title: "Just How Sad is Drake?"
+author: "Yasmeen Wilson"
+date: "December 3, 2017"
+output: 
+  html_document:
+  code_folding: hide
+---
+
+### Canadian rapper and cultural icon Aubrey "Drake" Graham has come to be synonymous without a lot of things. Multi-platinum records, affliation with the Toronto Rapters, and being the Internet's resident sad boy.  
+
+
+
+
+```{r, warning=FALSE, message=FALSE}
+library(tidytext)
+library(tidyverse)
+library(geniusr)
+library(ggplot2)
+library(purrr)
+library(reshape2)
+```
+
+```{r, echo=FALSE}
+
+genius_token()
+```
+
+
+```{r}
+
+artistID <- 130
+
+MoreLifeID <- 286515
+ViewsID <- 132506
+IfYoureReadingThisID <- 119674
+NWTSID <- 40475
+TakeCareID <- 10787
+ThankMeLaterID <- 2630
+
+
+ML <- scrape_tracklist(MoreLifeID)
+MLlyrics <- map_df(ML$song_lyrics_url, scrape_lyrics_url)
+
+ViewsTrackList <- scrape_tracklist(ViewsID)
+ViewLyrics <- map_df(ViewsTrackList$song_lyrics_url, scrape_lyrics_url)
+
+IFRTtrackList <- scrape_tracklist(IfYoureReadingThisID)
+IFRTLyrics <- map_df(IFRTtrackList$song_lyrics_url, scrape_lyrics_url)
+
+NWTStrackList <- scrape_tracklist(NWTSID)
+NWTSLyrics <- map_df(NWTStrackList$song_lyrics_url, scrape_lyrics_url)
+
+TCtrackList <- scrape_tracklist(TakeCareID)
+TCLyrics <- map_df(TCtrackList$song_lyrics_url, scrape_lyrics_url)
+
+TMLtrackList <- scrape_tracklist(ThankMeLaterID)
+TMLLyrics <- map_df(TMLtrackList$song_lyrics_url, scrape_lyrics_url)
+```
+
+
+```{r, message= FALSE}
+
+nrc <- get_sentiments("nrc")
+bing <- get_sentiments("bing")
+
+nrcSadness <- get_sentiments("nrc") %>%
+  filter(sentiment == "sadness")
+
+albumList <- list(MLlyrics = MLlyrics, ViewLyrics = ViewLyrics, IFRTLyrics = IFRTLyrics, NWTSLyrics = NWTSLyrics, TCLyrics = TCLyrics, TMLLyrics = TMLLyrics)
+
+albumList <- lapply(albumList, function(df) {
+        df %>% unnest_tokens(word, line) %>%
+    anti_join(stop_words) %>%
+    inner_join(nrcSadness) %>%
+    top_n(7) %>%
+    count(word, sentiment, sort = TRUE) %>%
+    ungroup()
+})
+
+newAlbum <- melt(albumList)
+
+
+ggplot(newAlbum, aes(index, sentiment, fill = albumList)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~, ncol = 2, scales = "free_x")
+
+#MoreLife <- albumList$MLlyrics
+#Views <- albumList$ViewLyrics
+#IfYoureReadingThis <- albumList$IFRTLyrics
+#NothingWasTheSame <- albumList$NWTSLyrics
+#TakeCare <- albumList$TCLyrics
+#ThankMeLater <- albumList$TMLLyrics
+
+#df <- rbind(MoreLife, Views, IfYoureReadingThis, NothingWasTheSame, TakeCare, ThankMeLater)
+
+##qplot(albumList$MLlyrics, albumList$ViewLyrics, geom = "boxplot")
+
+  #ggplot(bind_rows(albumList, .id = "album"), aes(n, sentiment, colour = albumList)) +
+  #geom_boxplot()
+  
+  #geom_col(show.legend = FALSE) +
+  #facet_wrap(~sentiment, scales = "free_y") +
+  #labs(y = "More Life",
+   #    x = NULL) +
+  #coord_flip() +
+  #theme_minimal()
+  
+
+```
+
+
+
+```{r}
+albumList$MLlyrics%>%
+  group_by(sentiment) %>%
+  top_n(5) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  filter(sentiment == "sadness") %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(y = "More Life",
+       x = NULL) +
+  coord_flip() +
+  theme_minimal()
+```
+
+
+```{r}
+albumList$ViewLyrics%>%
+  group_by(sentiment) %>%
+  top_n(5) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  filter(sentiment == "sadness") %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(y = "Views",
+       x = NULL) +
+  coord_flip() +
+  theme_minimal()
+```
+
+
+```{r}
+albumList$NWTSLyrics%>%
+  group_by(sentiment) %>%
+  top_n(5) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  filter(sentiment == "sadness") %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(y = "Nothing was the Same",
+       x = NULL) +
+  coord_flip() +
+  theme_minimal()
+```
+
+
+```{r}
+albumList$IFRTLyrics%>%
+  group_by(sentiment) %>%
+  top_n(5) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  filter(sentiment == "sadness") %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(y = "IF you're reading this",
+       x = NULL) +
+  coord_flip() +
+  theme_minimal()
+```
+
+
+```{r}
+albumList$TCLyrics%>%
+  group_by(sentiment) %>%
+  top_n(5) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  filter(sentiment == "sadness") %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(y = "Take Care",
+       x = NULL) +
+  coord_flip() +
+  theme_minimal()
+```
+
+
+```{r}
+albumList$TMLLyrics%>%
+  group_by(sentiment) %>%
+  top_n(5) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  filter(sentiment == "sadness") %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(y = "Thank Me Later",
+       x = NULL) +
+  coord_flip() +
+  theme_minimal()
+```
+
+![](https://i.imgur.com/5Zlas5B.gif)
