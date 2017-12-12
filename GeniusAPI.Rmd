@@ -78,6 +78,9 @@ albumList <- lapply(albumList, function(df) {
     ungroup()
 })
 
+as.data.frame(albumList$MLlyrics)
+as.data.frame(albumList$ViewLyrics)
+
 newAlbum <- melt(albumList)
 
 
