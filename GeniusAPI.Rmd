@@ -1,33 +1,62 @@
 ---
-title: "Just How Sad is Drake?"
-author: "Yasmeen Wilson"
-date: "December 3, 2017"
+title: "Just How Sad are Drake's Albums?"
 output: 
   html_document:
-  code_folding: hide
+    theme: "cosmo"
+    code_folding: show
 ---
 
-### Canadian rapper and cultural icon Aubrey "Drake" Graham has come to be synonymous without a lot of things. Multi-platinum records, affliation with the Toronto Rapters, and being the Internet's resident sad boy.  
+### Canadian rapper and cultural icon Aubrey "Drake" Graham has come to be synonymous without a lot of things. Multi-platinum records, affliation with the Toronto Rapters, and being the Internet's resident sad boy. 
+      
+
+![](https://i.imgur.com/AwUkLlt.jpg)
+
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+
+#### I was reading an article by [Complex Magazine](http://www.complex.com/music/most-sensitive-drake-lyrics/marvins-room) on the most sensitive Drake lyrics and it got me thinking, have Drake lyrics always been tear-jerkers, or is this a "new" thing? I say "new" because though Drake was years into the game when 'Take Care' came out, it has undeniably the saddest, senitive, get back together with you ex song he's written, "Marvin's Room". 
+
+#### Nevertheless, it's all speculaion on the "sadness" of Drake's albums unless we do some analysis on it. It should be stated that since I'll be doing sentiment analysis on the lyrics, it won't absolutly determine the "sadness" in a song as other musical components like tempo, instrumentals, and "feel" of the music. My bets are on 'Take Care' though... 
+      
 
 
+### One of many memes showcasing "Sad Drake"
+
+
+![](https://i.imgur.com/7cudu6g.jpg)
 
 
 ```{r, warning=FALSE, message=FALSE}
+
+# all needed libraries 
 library(tidytext)
 library(tidyverse)
 library(geniusr)
-library(ggplot2)
-library(purrr)
-library(reshape2)
-```
-
-```{r, echo=FALSE}
-
-genius_token()
+library(wordcloud)
 ```
 
 
-```{r}
+
+
+#### I planned on doing this using Genius's API but luckily for me, a very new (like just a week old at this point) package has been developed by a [Ewen Henderson](https://ewenme.rbind.io/) called geniusr, whose details you can find [here](https://cran.r-project.org/web/packages/geniusr/geniusr.pdf)
+
+### You WILL NEED an access token to use the api.
+
+####More information on the Genius API and how to achieve a token [here](https://docs.genius.com/)
+
+
+
+
+```{r, echo=FALSE, message= FALSE}
+#genius_token()
+```
+
+
+```{r, message= FALSE}
+
+#meta data
 
 artistID <- 130
 
@@ -38,6 +67,8 @@ NWTSID <- 40475
 TakeCareID <- 10787
 ThankMeLaterID <- 2630
 
+
+#Place all album lyrics in respective data frames
 
 ML <- scrape_tracklist(MoreLifeID)
 MLlyrics <- map_df(ML$song_lyrics_url, scrape_lyrics_url)
@@ -62,10 +93,12 @@ TMLLyrics <- map_df(TMLtrackList$song_lyrics_url, scrape_lyrics_url)
 ```{r, message= FALSE}
 
 nrc <- get_sentiments("nrc")
-bing <- get_sentiments("bing")
 
 nrcSadness <- get_sentiments("nrc") %>%
   filter(sentiment == "sadness")
+
+
+## Filter out all words except for those being categoried by "sadness"
 
 albumList <- list(MLlyrics = MLlyrics, ViewLyrics = ViewLyrics, IFRTLyrics = IFRTLyrics, NWTSLyrics = NWTSLyrics, TCLyrics = TCLyrics, TMLLyrics = TMLLyrics)
 
@@ -78,141 +111,98 @@ albumList <- lapply(albumList, function(df) {
     ungroup()
 })
 
-as.data.frame(albumList$MLlyrics)
-as.data.frame(albumList$ViewLyrics)
-
-newAlbum <- melt(albumList)
-
-
-ggplot(newAlbum, aes(index, sentiment, fill = albumList)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~, ncol = 2, scales = "free_x")
-
-#MoreLife <- albumList$MLlyrics
-#Views <- albumList$ViewLyrics
-#IfYoureReadingThis <- albumList$IFRTLyrics
-#NothingWasTheSame <- albumList$NWTSLyrics
-#TakeCare <- albumList$TCLyrics
-#ThankMeLater <- albumList$TMLLyrics
-
-#df <- rbind(MoreLife, Views, IfYoureReadingThis, NothingWasTheSame, TakeCare, ThankMeLater)
-
-##qplot(albumList$MLlyrics, albumList$ViewLyrics, geom = "boxplot")
-
-  #ggplot(bind_rows(albumList, .id = "album"), aes(n, sentiment, colour = albumList)) +
-  #geom_boxplot()
-  
-  #geom_col(show.legend = FALSE) +
-  #facet_wrap(~sentiment, scales = "free_y") +
-  #labs(y = "More Life",
-   #    x = NULL) +
-  #coord_flip() +
-  #theme_minimal()
-  
-
 ```
 
+
+
+```{r, message= FALSE}
+
+# Find the frequency of sad words in each album
+
+MLFreq <- MLlyrics %>%
+  unnest_tokens(word, line) %>%
+  anti_join(stop_words) %>%
+  ungroup() %>%
+  count(word)
+MLpct <- sum(albumList$MLlyrics$n) / sum(MLFreq$n)
+
+ViewFreq <- ViewLyrics %>%
+  unnest_tokens(word, line) %>%
+  anti_join(stop_words) %>%
+  ungroup() %>%
+  count(word)
+Viewpct <- sum(albumList$ViewLyrics$n) / sum(ViewFreq$n)
+
+IFRTFreq <- IFRTLyrics %>%
+  unnest_tokens(word, line) %>%
+  anti_join(stop_words) %>%
+  ungroup() %>%
+  count(word)
+IFRTpct <- sum(albumList$IFRTLyrics$n) / sum(IFRTFreq$n)
+
+NWTSFreq <- NWTSLyrics %>%
+  unnest_tokens(word, line) %>%
+  anti_join(stop_words) %>%
+  ungroup() %>%
+  count(word)
+NWTSpct <- sum(albumList$NWTSLyrics$n) / sum(NWTSFreq$n)
+
+TCFreq <- TCLyrics %>%
+  unnest_tokens(word, line) %>%
+  anti_join(stop_words) %>%
+  ungroup() %>%
+  count(word)
+TCpct <- sum(albumList$TCLyrics$n) / sum(TCFreq$n)
+
+TMLFreq <- TMLLyrics %>%
+  unnest_tokens(word, line) %>%
+  anti_join(stop_words) %>%
+  ungroup() %>%
+  count(word)
+TMLpct <- sum(albumList$TMLLyrics$n) / sum(TMLFreq$n)
+
+SadnessPercents <- data.frame(Percentage = c(MLpct, Viewpct, IFRTpct, NWTSpct, TCpct, TMLpct), Album = c('More Life','Views',' If You\'\re\nReading This\nIts Too Late', 'Nothing Was\nThe Same', 'Take Care', 'Thank Me Later'))
+
+SadnessPercents$Album <- factor(SadnessPercents$Album, levels = c('More Life','Views',' If You\'\re\nReading This\nIts Too Late', 'Nothing Was\nThe Same', 'Take Care', 'Thank Me Later'))
+
+
+ggplot(SadnessPercents, aes(x = Album, y = Percentage, fill = Album)) + geom_bar(stat = "identity", colour="black", width = 0.5) +
+  geom_text(data = SadnessPercents, aes(label = paste0(round(Percentage*100,1),"%"), y = Percentage + 0.012), size = 5) +
+  labs(title = "Percentage of 'Sad' Lyrics by Album", caption = "Source: Genius.com") + ylab("Freq") + scale_fill_brewer(palette = "YlOrRd")
+```
+
+![](https://i.imgur.com/iFzURFl.jpg)
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+
+####Well, there you have it folks. Just as I, *and I'm sure everyone else*, expected. Take Care takes the cake for "saddest" album. I've got to admit, it's a lot less than what I thought it would be but my suspicions have been confirmed.
+
+####Since we've established that Take Care is the saddest Drake album, let's take a look at some of the words that got us here.
 
 
 ```{r}
-albumList$MLlyrics%>%
-  group_by(sentiment) %>%
-  top_n(5) %>%
-  ungroup() %>%
-  mutate(word = reorder(word, n)) %>%
-  filter(sentiment == "sadness") %>%
-  ggplot(aes(word, n, fill = sentiment)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~sentiment, scales = "free_y") +
-  labs(y = "More Life",
-       x = NULL) +
-  coord_flip() +
-  theme_minimal()
+
+#censorship
+albumList$TCLyrics[albumList$TCLyrics == "bitch"] <- "b*tch"
+
+cloud <- albumList$TCLyrics %>%
+  with(wordcloud(word, n, max.words = 25, random.color = FALSE, rot.per = 0.35, colors = brewer.pal(5, "Dark2")))
+
 ```
 
-
-```{r}
-albumList$ViewLyrics%>%
-  group_by(sentiment) %>%
-  top_n(5) %>%
-  ungroup() %>%
-  mutate(word = reorder(word, n)) %>%
-  filter(sentiment == "sadness") %>%
-  ggplot(aes(word, n, fill = sentiment)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~sentiment, scales = "free_y") +
-  labs(y = "Views",
-       x = NULL) +
-  coord_flip() +
-  theme_minimal()
-```
-
-
-```{r}
-albumList$NWTSLyrics%>%
-  group_by(sentiment) %>%
-  top_n(5) %>%
-  ungroup() %>%
-  mutate(word = reorder(word, n)) %>%
-  filter(sentiment == "sadness") %>%
-  ggplot(aes(word, n, fill = sentiment)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~sentiment, scales = "free_y") +
-  labs(y = "Nothing was the Same",
-       x = NULL) +
-  coord_flip() +
-  theme_minimal()
-```
-
-
-```{r}
-albumList$IFRTLyrics%>%
-  group_by(sentiment) %>%
-  top_n(5) %>%
-  ungroup() %>%
-  mutate(word = reorder(word, n)) %>%
-  filter(sentiment == "sadness") %>%
-  ggplot(aes(word, n, fill = sentiment)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~sentiment, scales = "free_y") +
-  labs(y = "IF you're reading this",
-       x = NULL) +
-  coord_flip() +
-  theme_minimal()
-```
-
-
-```{r}
-albumList$TCLyrics%>%
-  group_by(sentiment) %>%
-  top_n(5) %>%
-  ungroup() %>%
-  mutate(word = reorder(word, n)) %>%
-  filter(sentiment == "sadness") %>%
-  ggplot(aes(word, n, fill = sentiment)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~sentiment, scales = "free_y") +
-  labs(y = "Take Care",
-       x = NULL) +
-  coord_flip() +
-  theme_minimal()
-```
-
-
-```{r}
-albumList$TMLLyrics%>%
-  group_by(sentiment) %>%
-  top_n(5) %>%
-  ungroup() %>%
-  mutate(word = reorder(word, n)) %>%
-  filter(sentiment == "sadness") %>%
-  ggplot(aes(word, n, fill = sentiment)) +
-  geom_col(show.legend = FALSE) +
-  facet_wrap(~sentiment, scales = "free_y") +
-  labs(y = "Thank Me Later",
-       x = NULL) +
-  coord_flip() +
-  theme_minimal()
-```
+### Poor Drake
 
 ![](https://i.imgur.com/5Zlas5B.gif)
+
+
+### Some Last Thoughts
+&nbsp;
+#### Because of Drake's recent affinty for singing in [Patois](https://www.google.com/search?q=patois&oq=patois&aqs=chrome..69i57j0l5.991j0j7&sourceid=chrome&ie=UTF-8), doing sentiment analysis using the standard lexicons wasn't be ideal, but it's what I was working with. Also, Drake fans may have noticed that the Drake & Future co-lab album 'What A Time To Be Alive' wasn't included and that is because it is trap heavy, and dare I say Future carried the whole project .**Oops**. Obviously, some more analysis could be done to truly determine the absolute saddest Drake album, like creating a lexicon that takes AAVE (African American Venicular Language) and Patois into account as well as taking tempo and instrumentals into account. Nevertheless, if you're not in the mood for heartbreak, stay away from 'Take Care'.
+
+
